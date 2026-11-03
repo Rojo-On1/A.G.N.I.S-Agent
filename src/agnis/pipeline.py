@@ -7,7 +7,6 @@ from typing import Any
 from .agents import build_agents, classify, normalize, write_impact
 from .cvss import score_vector, severity_for_score
 from .cwe import validate_cwe
-from .llm import create_openai_model
 from .models import ImpactRecommendation, Observation, ReportInput
 from .poc import PocRunner
 from .render import render_template
@@ -20,8 +19,7 @@ def run_pipeline(
     poc_results_path: str | None = None,
     cwe_catalog_path: str | None = None,
 ) -> str:
-    model = create_openai_model()
-    normalizer, classifier, impact_agent = build_agents(model)
+    normalizer, classifier, impact_agent = build_agents()
     draft = normalize(normalizer, draft_markdown)
     poc_runner = PocRunner()
     supplied_results = _load_poc_results(poc_results_path)

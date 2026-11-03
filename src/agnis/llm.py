@@ -1,11 +1,21 @@
 from __future__ import annotations
 
-from typing import Any, TypeVar
+from dataclasses import dataclass
+from typing import Any, Callable, TypeVar
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
+
+
+@dataclass(frozen=True)
+class ModelParameters:
+    """Parámetros de generación ajustados al contrato de cada agente."""
+
+    temperature: float
+    top_p: float
+    max_tokens: int
 
 
 class StructuredAgent:
@@ -27,7 +37,7 @@ class StructuredAgent:
         )
 
 
-def create_openai_model() -> Any:
+def create_openai_model(parameters: ModelParameters) -> Any:
     load_dotenv()
     try:
         from langchain_openai import ChatOpenAI
@@ -35,4 +45,12 @@ def create_openai_model() -> Any:
         raise RuntimeError(
             "Instala el extra del proveedor: pip install 'agnis-agent[openai]'"
         ) from exc
-    return ChatOpenAI(model="gpt-4o-mini", temperature=0)
+    return ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=parameters.temperature,
+        top_p=parameters.top_p,
+        max_tokens=parameters.max_tokens,
+    )
+
+
+ModelFactory = Callable[[ModelParameters], Any]

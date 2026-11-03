@@ -63,7 +63,20 @@ El workflow `Sync CWE catalog` descarga semanalmente el catálogo oficial
 puede ejecutarse manualmente desde la pestaña **Actions**. El catálogo queda en
 `data/cwec_v5.0.xml` y no se modifica directamente la rama `main`.
 
-El modelo se configura mediante `langchain-openai` y usa `gpt-4o-mini` con temperatura cero. El proveedor está aislado en `agnis/llm.py` para poder sustituirlo sin modificar los agentes.
+El modelo se configura mediante `langchain-openai` y usa `gpt-4o-mini`. Los parámetros
+se definen por agente en `agnis/agents.py`:
+
+| Agente | Temperature | Top p | Max tokens | Justificación |
+|---|---:|---:|---:|---|
+| Normalizador | 0.0 | 0.1 | 2500 | Necesita reproducibilidad y conservar datos literalmente; se prioriza precisión. |
+| Clasificador | 0.0 | 0.1 | 1200 | Propone valores técnicos acotados; se minimiza la variación del modelo. |
+| Impacto | 0.2 | 0.3 | 1800 | Permite redactar frases claras manteniendo baja creatividad para no superar la evidencia. |
+
+`temperature` controla la variabilidad, `top_p` limita el conjunto acumulado de
+tokens candidatos y `max_tokens` limita la longitud de la respuesta. Los valores bajos
+son intencionales: este flujo transforma datos de auditoría y necesita precisión,
+trazabilidad y salidas repetibles, no generación creativa. El proveedor está aislado
+en `agnis/llm.py` para poder sustituirlo sin modificar los agentes.
 
 Si un adaptador POC externo produce observaciones, se pueden pasar como JSON:
 
