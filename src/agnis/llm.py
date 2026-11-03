@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any, TypeVar
 
+from dotenv import load_dotenv
 from pydantic import BaseModel
 
 T = TypeVar("T", bound=BaseModel)
@@ -27,6 +28,7 @@ class StructuredAgent:
 
 
 def create_openai_model() -> Any:
+    load_dotenv()
     try:
         from langchain_openai import ChatOpenAI
     except ImportError as exc:

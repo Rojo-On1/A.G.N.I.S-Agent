@@ -20,8 +20,17 @@ Las decisiones deterministas —confirmación de pasos, puntuación CVSS, severi
 python -m venv .venv
 . .venv/bin/activate
 pip install -e '.[openai,dev]'
-export OPENAI_API_KEY='...'
+cp .env.example .env
 ```
+
+Edita `.env` y añade tu clave:
+
+```dotenv
+OPENAI_API_KEY=tu_clave_de_openai
+```
+
+La aplicación carga automáticamente `.env` mediante `python-dotenv`. El archivo
+`.env` está excluido de Git y nunca debe subirse al repositorio.
 
 ## Uso
 
