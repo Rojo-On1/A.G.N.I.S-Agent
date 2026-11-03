@@ -45,6 +45,13 @@ Para DOCX se necesita LibreOffice instalado para convertir el documento final a 
 En PDF, los marcadores deben existir como texto seleccionable; A.G.N.I.S. los reemplaza
 conservando la posición de la plantilla.
 
+## Catálogo CWE
+
+El workflow `Sync CWE catalog` descarga semanalmente el catálogo oficial
+`cwec_v5.0.xml` desde MITRE y abre un pull request cuando detecta cambios. También
+puede ejecutarse manualmente desde la pestaña **Actions**. El catálogo queda en
+`data/cwec_v5.0.xml` y no se modifica directamente la rama `main`.
+
 El modelo se configura mediante `langchain-openai` y usa `gpt-4o-mini` con temperatura cero. El proveedor está aislado en `agnis/llm.py` para poder sustituirlo sin modificar los agentes.
 
 ## Próximos adaptadores
