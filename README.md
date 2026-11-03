@@ -95,6 +95,166 @@ El formato es un objeto por hallazgo:
 }
 ```
 
+## Trabajo extraclase: workflow automatizado con agentes y prompt engineering
+
+### 1. Escenario seleccionado
+
+A.G.N.I.S. se aplica al proceso de auditoría de seguridad web de una empresa,
+universidad, mipyme o institución pública. El auditor parte de un borrador escrito
+en Markdown y necesita convertirlo en un informe técnico formal, trazable y
+compatible con la plantilla institucional.
+
+El problema que resuelve el workflow es la formalización manual y repetitiva de
+hallazgos de seguridad. El sistema estructura el borrador, separa cada hallazgo,
+organiza la evidencia, propone clasificaciones técnicas y rellena una plantilla
+DOCX o PDF para producir el informe final en PDF.
+
+El sistema no sustituye al auditor: las observaciones del POC, las propuestas de
+clasificación y el informe final deben poder ser revisados por una persona.
+
+### 2. Diseño de prompts
+
+Cada agente recibe únicamente la información necesaria para su tarea:
+
+- **Normalizador:** recibe el Markdown original. Conserva literalmente las acciones,
+  identifica hallazgos y marca como pendientes los datos que no aparecen.
+- **Clasificador:** recibe un hallazgo estructurado y propone vector CVSS 4.0,
+  categoría OWASP y causa técnica. No calcula puntuación ni severidad.
+- **Impacto:** recibe solo los pasos confirmados. Describe el impacto demostrado y
+  propone recomendaciones sin inventar consecuencias.
+- **Redactor de plantilla:** recibe los datos ya resueltos por código y solo sustituye
+  marcadores de la plantilla.
+
+Los prompts incorporan medidas de precisión y seguridad:
+
+1. **Alcance limitado:** cada agente tiene una responsabilidad única.
+2. **Prohibición de invención:** los datos ausentes se marcan como pendientes.
+3. **Separación entre observación y decisión:** el modelo no confirma exploits ni
+   calcula CVSS; esas decisiones se ejecutan en código.
+4. **Salida estructurada:** las respuestas se validan con modelos Pydantic.
+5. **Trazabilidad:** los impactos deben referenciar pasos confirmados.
+6. **Minimización de datos:** no se envía el documento completo a todos los agentes.
+7. **Supervisión humana:** el auditor conserva la decisión final antes de publicar.
+
+### 3. Configuración del modelo
+
+El proveedor actual es `gpt-4o-mini` mediante LangChain. Los parámetros se ajustan
+según el objetivo de cada agente:
+
+| Agente | Temperature | Top p | Max tokens | Justificación |
+|---|---:|---:|---:|---|
+| Normalizador | 0.0 | 0.1 | 2500 | Tarea de extracción; se priorizan fidelidad, precisión y reproducibilidad. |
+| Clasificador | 0.0 | 0.1 | 1200 | Tarea técnica acotada; se reduce la variación y la creatividad. |
+| Impacto | 0.2 | 0.3 | 1800 | Tarea de redacción controlada; permite claridad sin alejarse de la evidencia. |
+
+`temperature` regula la variabilidad de la generación, `top_p` limita la distribución
+acumulada de tokens candidatos y `max_tokens` limita la longitud máxima de respuesta.
+Los valores bajos son apropiados porque el workflow transforma información de
+auditoría: la precisión y la consistencia son más importantes que la creatividad.
+
+### 4. Arquitectura del workflow
+
+```mermaid
+flowchart TD
+    A[Borrador Markdown] --> B[Agente Normalizador]
+    T[Plantilla DOCX o PDF] --> H[Agente Redactor de plantilla]
+    B --> C[Parser y validación Pydantic]
+    C --> D[Paquetes individuales por hallazgo]
+    D --> E[POC externo: navegador o Burp]
+    E --> F[Filtro determinista de pasos confirmados]
+    D --> G[Agente Clasificador]
+    G --> I[Cálculo CVSS y severidad en código]
+    G --> J[Validación CWE contra catálogo MITRE]
+    F --> K[Agente de Impacto y Recomendaciones]
+    I --> H
+    J --> H
+    K --> H
+    H --> L[PDF institucional]
+    L --> M[Revisión y aprobación del auditor]
+```
+
+El flujo de entrada es el borrador y la plantilla. El procesamiento combina agentes
+LangChain con validaciones deterministas en Python. La salida es un PDF basado en la
+plantilla institucional. La supervisión ocurre durante la confirmación de resultados
+y antes de la publicación.
+
+El POC incluido en este MVP funciona como límite de integración y no simula
+peticiones web. Un adaptador real de navegador o Burp debe producir el JSON de
+observaciones confirmadas antes de generar impacto.
+
+### 5. Decisión final y justificación técnica
+
+Se eligió Python con LangChain porque permite construir agentes con prompts
+especializados, salida estructurada y sustitución del proveedor LLM. Pydantic valida
+los contratos entre etapas; Python ejecuta las reglas que no deben quedar a criterio
+del modelo; PyMuPDF y `python-docx` permiten trabajar con plantillas PDF y DOCX.
+
+La arquitectura desacoplada mejora la eficiencia porque automatiza la transcripción,
+clasificación preliminar y maquetación repetitiva. Mejora la seguridad porque limita
+el contexto de cada agente, evita que el modelo calcule decisiones críticas, valida el
+CWE contra el catálogo oficial y exige evidencia confirmada para redactar impacto.
+Los fallos de validación deben detener la generación en lugar de producir un informe
+con apariencia de completitud.
+
+### 6. Ética, privacidad y normativa
+
+#### Riesgos identificados
+
+- **Privacidad:** los borradores pueden contener nombres, correos, direcciones IP,
+  tokens, cookies o datos de usuarios.
+- **Sesgos y errores:** el modelo puede proponer una clasificación incorrecta o
+  interpretar de forma desigual hallazgos similares.
+- **Alucinaciones:** el modelo puede agregar impactos, recomendaciones o datos no
+  demostrados.
+- **Opacidad:** una propuesta automática puede parecer una decisión definitiva.
+- **Riesgo operativo:** un POC mal configurado podría afectar sistemas reales.
+- **Dependencia del proveedor:** el envío de información a una API externa puede
+  generar riesgos contractuales, de residencia y retención de datos.
+
+#### Medidas de gobernanza
+
+1. Anonimizar o redactar secretos, datos personales y credenciales antes del envío.
+2. Mantener `.env` fuera del repositorio y gestionar las claves como secretos.
+3. Conservar el borrador original, entradas, salidas, versiones y decisiones para
+   asegurar trazabilidad.
+4. Aplicar revisión humana obligatoria antes de ejecutar acciones y publicar el PDF.
+5. Validar esquemas, CWE, CVSS, marcadores y campos obligatorios en código.
+6. Ejecutar pruebas únicamente dentro del alcance autorizado y con cuentas de prueba.
+7. Registrar errores y bloquear salidas incompletas en lugar de ocultarlos.
+8. Revisar periódicamente prompts, proveedores, permisos, dependencias y catálogo CWE.
+9. Definir retención, acceso y eliminación de evidencias según la política institucional.
+
+#### Marcos legales y regulatorios
+
+El proyecto debe adaptarse a la jurisdicción de la institución y contar con revisión
+legal. Como referencias de gobernanza se consideran:
+
+- **GDPR/RGPD:** minimización, limitación de finalidad, base jurídica, seguridad,
+  control de acceso, retención y derechos de los titulares cuando se procesen datos
+  personales.
+- **EU AI Act:** gestión de riesgos, transparencia, supervisión humana, documentación,
+  registro de operaciones y controles proporcionales al uso previsto del sistema.
+- **Decreto Ley 78/2023:** debe analizarse según su ámbito territorial y sectorial,
+  identificando las obligaciones locales aplicables a ciberseguridad, datos y uso de
+  sistemas automatizados.
+
+Estas referencias no sustituyen asesoría jurídica. El responsable del tratamiento y
+la institución deben determinar qué normativa aplica al caso concreto.
+
+### 7. Estado de cumplimiento del trabajo
+
+| Requisito | Estado |
+|---|---|
+| Escenario y problema definidos | Implementado |
+| Prompts con restricciones de precisión y seguridad | Implementado |
+| Temperature, Top p y Max tokens definidos y justificados | Implementado |
+| Workflow con LangChain y agentes especializados | Implementado |
+| Diagrama entrada → procesamiento → salida → supervisión | Implementado |
+| Decisiones críticas ejecutadas en código | Implementado parcialmente; falta completar el adaptador POC real |
+| Salida basada en plantilla DOCX/PDF y PDF final | Implementado |
+| Gobernanza ética y referencias normativas | Definido |
+| POC real de navegador o Burp | Pendiente |
+
 ## Próximos adaptadores
 
 - Implementar un `PocRunner` para navegador o Burp.
