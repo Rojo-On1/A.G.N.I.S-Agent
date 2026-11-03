@@ -133,7 +133,7 @@ terminar, el pipeline valida que exista al menos un hallazgo, que cada clasifica
 tenga puntuación CVSS, que no queden marcadores de plantilla y que el PDF se haya
 generado correctamente.
 
-## Trabajo extraclase: workflow automatizado con agentes y prompt engineering
+## Diseño y gobernanza del workflow
 
 ### 1. Escenario seleccionado
 
@@ -279,7 +279,7 @@ legal. Como referencias de gobernanza se consideran:
 Estas referencias no sustituyen asesoría jurídica. El responsable del tratamiento y
 la institución deben determinar qué normativa aplica al caso concreto.
 
-### 7. Estado de cumplimiento del trabajo
+### 7. Estado de cumplimiento
 
 | Requisito | Estado |
 |---|---|
@@ -292,10 +292,3 @@ la institución deben determinar qué normativa aplica al caso concreto.
 | Salida basada en plantilla DOCX/PDF y PDF final | Implementado |
 | Gobernanza ética y referencias normativas | Definido |
 | POC real de navegador o Burp | Pendiente |
-
-## Adaptadores restantes
-
-- El adaptador HTTP y la persistencia de artefactos están implementados.
-- Los adaptadores de navegador y Burp deben respetar el contrato `PocResult` y
-  permanecer detrás de la misma frontera de ejecución autorizada.
-- La revisión humana continúa siendo obligatoria antes de publicar el PDF.
