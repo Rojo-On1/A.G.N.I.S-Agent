@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agnis-agent"
+version = "0.1.0"
+description = "Pipeline de agentes para formalizar informes de auditoría web"
+requires-python = ">=3.11"
+dependencies = [
+  "langchain-core>=0.3.0,<2",
+  "pydantic>=2.7,<3",
+]
+
+[project.optional-dependencies]
+openai = [
+  "langchain-openai>=0.2.0,<2",
+]
+dev = [
+  "pytest>=8.0,<9",
+]
+
+[project.scripts]
+agnis = "agnis.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

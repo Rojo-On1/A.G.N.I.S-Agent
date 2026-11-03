@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: agnis-agent
+Version: 0.1.0
+Summary: Pipeline de agentes para formalizar informes de auditoría web
+Requires-Python: >=3.11
+Requires-Dist: langchain-core<2,>=0.3.0
+Requires-Dist: pydantic<3,>=2.7
+Provides-Extra: openai
+Requires-Dist: langchain-openai<2,>=0.2.0; extra == "openai"
+Provides-Extra: dev
+Requires-Dist: pytest<9,>=8.0; extra == "dev"
