@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+
 from .models import Finding, Observation, PocResult
 
 
@@ -10,12 +12,19 @@ class PocRunner:
     result later; unexecuted steps remain unconfirmed and cannot feed impact.
     """
 
-    def run(self, finding: Finding) -> PocResult:
+    def run(
+        self, finding: Finding, supplied: Mapping[int, Observation] | None = None
+    ) -> PocResult:
+        supplied = supplied or {}
         return PocResult(
             finding_id=finding.id,
             observations=[
-                Observation(step_number=step.number, confirmed=False)
+                supplied.get(step.number, Observation(step_number=step.number))
                 for step in finding.steps
             ],
-            gaps=["No hay adaptador de ejecución configurado para este hallazgo."],
+            gaps=(
+                []
+                if supplied
+                else ["No hay adaptador de ejecución configurado para este hallazgo."]
+            ),
         )

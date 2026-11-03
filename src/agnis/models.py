@@ -50,6 +50,8 @@ class PocResult(BaseModel):
 
 class TechnicalClassification(BaseModel):
     cvss_vector: str
+    cvss_score: float | None = None
+    severity: Literal["None", "Low", "Medium", "High", "Critical"] | None = None
     owasp_category: str
     technical_cause: str
     cwe_id: str | None = None

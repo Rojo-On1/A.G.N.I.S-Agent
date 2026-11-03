@@ -12,7 +12,7 @@ El pipeline ya separa:
 4. **Impacto:** recibe únicamente pasos confirmados.
 5. **Renderizado:** el último componente rellena la plantilla DOCX o PDF y produce un PDF.
 
-Las decisiones deterministas —confirmación de pasos, puntuación CVSS, severidad, tablas y validación final— todavía deben implementarse antes de usarlo en producción.
+Las decisiones deterministas —confirmación de pasos, puntuación CVSS, severidad y validación CWE— ya se ejecutan en código. La ejecución web real sigue siendo un adaptador externo.
 
 ## Instalación
 
@@ -35,7 +35,8 @@ La aplicación carga automáticamente `.env` mediante `python-dotenv`. El archiv
 ## Uso
 
 ```bash
-agnis borrador.md plantilla.docx --output informe.pdf
+agnis borrador.md plantilla.docx --output informe.pdf \
+  --cwe-catalog data/cwec_v5.0.xml
 ```
 
 También se aceptan plantillas PDF:
@@ -48,7 +49,8 @@ Las plantillas usan marcadores `{{nombre}}`. Están disponibles `{{application}}
 `{{base_url}}`, `{{environment}}`, `{{test_date}}`, `{{finding_count}}` y, para cada
 hallazgo, `{{finding_1.title}}`, `{{finding_1.asset}}`, `{{finding_1.owasp}}`,
 `{{finding_1.cause}}`, `{{finding_1.cwe}}`, `{{finding_1.cvss_vector}}`,
-`{{finding_1.impact}}` y `{{finding_1.recommendations}}`.
+`{{finding_1.cvss_score}}`, `{{finding_1.severity}}`, `{{finding_1.impact}}` y
+`{{finding_1.recommendations}}`.
 
 Para DOCX se necesita LibreOffice instalado para convertir el documento final a PDF.
 En PDF, los marcadores deben existir como texto seleccionable; A.G.N.I.S. los reemplaza
@@ -63,9 +65,25 @@ puede ejecutarse manualmente desde la pestaña **Actions**. El catálogo queda e
 
 El modelo se configura mediante `langchain-openai` y usa `gpt-4o-mini` con temperatura cero. El proveedor está aislado en `agnis/llm.py` para poder sustituirlo sin modificar los agentes.
 
+Si un adaptador POC externo produce observaciones, se pueden pasar como JSON:
+
+```bash
+agnis borrador.md plantilla.docx --output informe.pdf \
+  --poc-results poc-results.json
+```
+
+El formato es un objeto por hallazgo:
+
+```json
+{
+  "FF-001": [
+    {"step_number": 1, "http_status": 200, "confirmed": true}
+  ]
+}
+```
+
 ## Próximos adaptadores
 
 - Implementar un `PocRunner` para navegador o Burp.
-- Cargar `cwec_v5.0.xml` y filtrar candidatos antes del selector CWE.
-- Calcular CVSS con la librería oficial y derivar la severidad en código.
-- Añadir validación de esquema, persistencia de artefactos y revisión del auditor.
+- Implementar el adaptador POC para navegador o Burp.
+- Añadir persistencia de artefactos y revisión del auditor.
