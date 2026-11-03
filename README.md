@@ -95,6 +95,44 @@ El formato es un objeto por hallazgo:
 }
 ```
 
+También existe un adaptador HTTP explícito para pruebas autorizadas. Solo ejecuta
+las peticiones descritas en el archivo de especificación contra el mismo host de
+`base_url`, y exige una confirmación opt-in:
+
+```bash
+agnis borrador.md plantilla.docx \
+  --poc-http-spec poc-http.json \
+  --allow-network \
+  --artifacts-dir artifacts \
+  --output informe.pdf
+```
+
+Ejemplo de `poc-http.json`:
+
+```json
+{
+  "FF-001": [
+    {
+      "step_number": 1,
+      "path": "/api/users",
+      "method": "GET",
+      "headers": {},
+      "expected_status": 200
+    }
+  ]
+}
+```
+
+El adaptador no sigue URLs fuera del host autorizado, limita el cuerpo leído, redacta
+cabeceras sensibles y marca un paso como confirmado solo si coincide con
+`expected_status`. Para navegador o Burp se mantiene el contrato de observaciones
+JSON, de modo que pueden añadirse adaptadores sin cambiar el pipeline.
+
+Con `--artifacts-dir` se conserva `resolved-report.json` para trazabilidad. Antes de
+terminar, el pipeline valida que exista al menos un hallazgo, que cada clasificación
+tenga puntuación CVSS, que no queden marcadores de plantilla y que el PDF se haya
+generado correctamente.
+
 ## Trabajo extraclase: workflow automatizado con agentes y prompt engineering
 
 ### 1. Escenario seleccionado
@@ -178,9 +216,9 @@ LangChain con validaciones deterministas en Python. La salida es un PDF basado e
 plantilla institucional. La supervisión ocurre durante la confirmación de resultados
 y antes de la publicación.
 
-El POC incluido en este MVP funciona como límite de integración y no simula
-peticiones web. Un adaptador real de navegador o Burp debe producir el JSON de
-observaciones confirmadas antes de generar impacto.
+El POC incluido en este MVP funciona como límite de integración. El adaptador HTTP
+ejecuta únicamente peticiones declaradas y autorizadas; navegador o Burp pueden
+producir el mismo JSON de observaciones confirmadas.
 
 ### 5. Decisión final y justificación técnica
 
@@ -255,8 +293,9 @@ la institución deben determinar qué normativa aplica al caso concreto.
 | Gobernanza ética y referencias normativas | Definido |
 | POC real de navegador o Burp | Pendiente |
 
-## Próximos adaptadores
+## Adaptadores restantes
 
-- Implementar un `PocRunner` para navegador o Burp.
-- Implementar el adaptador POC para navegador o Burp.
-- Añadir persistencia de artefactos y revisión del auditor.
+- El adaptador HTTP y la persistencia de artefactos están implementados.
+- Los adaptadores de navegador y Burp deben respetar el contrato `PocResult` y
+  permanecer detrás de la misma frontera de ejecución autorizada.
+- La revisión humana continúa siendo obligatoria antes de publicar el PDF.

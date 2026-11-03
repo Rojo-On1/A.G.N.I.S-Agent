@@ -38,6 +38,7 @@ class Observation(BaseModel):
     fields: list[str] = Field(default_factory=list)
     observed_values: str | None = None
     confirmed: bool = False
+    error: str | None = None
 
 
 class PocResult(BaseModel):

@@ -25,6 +25,21 @@ def main() -> None:
         help="Ruta local a cwec_v5.0.xml para validar CWE",
     )
     parser.add_argument(
+        "--poc-http-spec",
+        type=Path,
+        help="JSON de peticiones HTTP explícitas por hallazgo y paso",
+    )
+    parser.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="Permite al adaptador HTTP ejecutar peticiones al host del borrador",
+    )
+    parser.add_argument(
+        "--artifacts-dir",
+        type=Path,
+        help="Directorio para guardar el JSON de resultados resueltos",
+    )
+    parser.add_argument(
         "-o",
         "--output",
         type=Path,
@@ -38,5 +53,8 @@ def main() -> None:
         str(args.output),
         str(args.poc_results) if args.poc_results else None,
         str(args.cwe_catalog) if args.cwe_catalog else None,
+        str(args.poc_http_spec) if args.poc_http_spec else None,
+        str(args.artifacts_dir) if args.artifacts_dir else None,
+        args.allow_network,
     )
     print(result)

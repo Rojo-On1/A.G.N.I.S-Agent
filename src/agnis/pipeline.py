@@ -5,11 +5,14 @@ from pathlib import Path
 from typing import Any
 
 from .agents import build_agents, classify, normalize, write_impact
+from .artifacts import save_report_artifacts
 from .cvss import score_vector, severity_for_score
 from .cwe import validate_cwe
 from .models import ImpactRecommendation, Observation, ReportInput
 from .poc import PocRunner
+from .poc_http import HttpPocRunner
 from .render import render_template
+from .validation import validate_final_report
 
 
 def run_pipeline(
@@ -18,9 +21,19 @@ def run_pipeline(
     output_pdf: str,
     poc_results_path: str | None = None,
     cwe_catalog_path: str | None = None,
+    poc_http_spec_path: str | None = None,
+    artifacts_dir: str | None = None,
+    allow_network: bool = False,
 ) -> str:
+    if poc_http_spec_path and not allow_network:
+        raise ValueError("El adaptador HTTP requiere --allow-network explícito.")
     normalizer, classifier, impact_agent = build_agents()
     draft = normalize(normalizer, draft_markdown)
+    http_runner = (
+        HttpPocRunner.from_json(draft.base_url or "", poc_http_spec_path)
+        if poc_http_spec_path
+        else None
+    )
     poc_runner = PocRunner()
     supplied_results = _load_poc_results(poc_results_path)
     if cwe_catalog_path is None:
@@ -28,7 +41,11 @@ def run_pipeline(
         cwe_catalog_path = str(default_catalog) if default_catalog.is_file() else None
     resolved = []
     for finding in draft.findings:
-        poc = poc_runner.run(finding, supplied_results.get(finding.id))
+        poc = (
+            http_runner.run(finding)
+            if http_runner
+            else poc_runner.run(finding, supplied_results.get(finding.id))
+        )
         classification = classify(classifier, finding)
         classification.cvss_score = score_vector(classification.cvss_vector)
         classification.severity = severity_for_score(classification.cvss_score)
@@ -57,7 +74,10 @@ def run_pipeline(
             }
         )
     report = ReportInput(draft=draft, findings=resolved)
+    if artifacts_dir:
+        save_report_artifacts(report, artifacts_dir)
     render_template(report, template_path, output_pdf)
+    validate_final_report(report, output_pdf)
     return output_pdf
 
 
