@@ -4,10 +4,10 @@ from .agents import build_agents, classify, normalize, write_impact
 from .llm import create_openai_model
 from .models import ReportInput
 from .poc import PocRunner
-from .render import render_report
+from .render import render_template
 
 
-def run_pipeline(draft_markdown: str) -> str:
+def run_pipeline(draft_markdown: str, template_path: str, output_pdf: str) -> str:
     model = create_openai_model()
     normalizer, classifier, impact_agent = build_agents(model)
     draft = normalize(normalizer, draft_markdown)
@@ -33,4 +33,6 @@ def run_pipeline(draft_markdown: str) -> str:
                 "impact": impact,
             }
         )
-    return render_report(ReportInput(draft=draft, findings=resolved))
+    report = ReportInput(draft=draft, findings=resolved)
+    render_template(report, template_path, output_pdf)
+    return output_pdf

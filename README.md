@@ -1,6 +1,6 @@
 # A.G.N.I.S-Agent
 
-MVP de una cadena de agentes en Python para convertir un borrador de auditoría web en un informe Markdown estructurado.
+MVP de una cadena de agentes en Python para convertir un borrador de auditoría web y una plantilla institucional en un informe PDF.
 
 ## Estado del MVP
 
@@ -10,7 +10,7 @@ El pipeline ya separa:
 2. **POC:** usa un adaptador explícito; el adaptador incluido no ejecuta peticiones y deja los pasos sin confirmar.
 3. **Clasificación:** propone vector CVSS 4.0, OWASP y causa técnica.
 4. **Impacto:** recibe únicamente pasos confirmados.
-5. **Renderizado:** genera el informe Markdown.
+5. **Renderizado:** el último componente rellena la plantilla DOCX o PDF y produce un PDF.
 
 Las decisiones deterministas —confirmación de pasos, puntuación CVSS, severidad, tablas y validación final— todavía deben implementarse antes de usarlo en producción.
 
@@ -26,8 +26,24 @@ export OPENAI_API_KEY='...'
 ## Uso
 
 ```bash
-agnis borrador.md --output informe.md
+agnis borrador.md plantilla.docx --output informe.pdf
 ```
+
+También se aceptan plantillas PDF:
+
+```bash
+agnis borrador.md plantilla.pdf --output informe.pdf
+```
+
+Las plantillas usan marcadores `{{nombre}}`. Están disponibles `{{application}}`,
+`{{base_url}}`, `{{environment}}`, `{{test_date}}`, `{{finding_count}}` y, para cada
+hallazgo, `{{finding_1.title}}`, `{{finding_1.asset}}`, `{{finding_1.owasp}}`,
+`{{finding_1.cause}}`, `{{finding_1.cwe}}`, `{{finding_1.cvss_vector}}`,
+`{{finding_1.impact}}` y `{{finding_1.recommendations}}`.
+
+Para DOCX se necesita LibreOffice instalado para convertir el documento final a PDF.
+En PDF, los marcadores deben existir como texto seleccionable; A.G.N.I.S. los reemplaza
+conservando la posición de la plantilla.
 
 El modelo se configura mediante `langchain-openai` y usa `gpt-4o-mini` con temperatura cero. El proveedor está aislado en `agnis/llm.py` para poder sustituirlo sin modificar los agentes.
 
