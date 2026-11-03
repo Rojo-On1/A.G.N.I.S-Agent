@@ -39,6 +39,10 @@ def _finding_values(prefix: str, resolved: ResolvedFinding) -> dict[str, str]:
         f"{prefix}.cause": classification.technical_cause,
         f"{prefix}.cwe": classification.cwe_id or "",
         f"{prefix}.cvss_vector": classification.cvss_vector,
+        f"{prefix}.cvss_score": (
+            "" if classification.cvss_score is None else str(classification.cvss_score)
+        ),
+        f"{prefix}.severity": classification.severity or "",
         f"{prefix}.impact": "\n".join(resolved.impact.impact),
         f"{prefix}.recommendations": "\n".join(resolved.impact.recommendations),
     }

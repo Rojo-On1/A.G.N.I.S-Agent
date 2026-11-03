@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from .llm import StructuredAgent
+from .llm import ModelFactory, ModelParameters, StructuredAgent, create_openai_model
 from .models import (
     Finding,
     ImpactRecommendation,
@@ -26,11 +26,30 @@ referenciar el número del paso. Las recomendaciones deben atender la causa obse
 No agregues consecuencias no demostradas ni severidades."""
 
 
-def build_agents(model: object) -> tuple[StructuredAgent, StructuredAgent, StructuredAgent]:
+NORMALIZER_PARAMETERS = ModelParameters(
+    temperature=0.0, top_p=0.1, max_tokens=2500
+)
+CLASSIFIER_PARAMETERS = ModelParameters(
+    temperature=0.0, top_p=0.1, max_tokens=1200
+)
+IMPACT_PARAMETERS = ModelParameters(
+    temperature=0.2, top_p=0.3, max_tokens=1800
+)
+
+
+def build_agents(
+    model_factory: ModelFactory = create_openai_model,
+) -> tuple[StructuredAgent, StructuredAgent, StructuredAgent]:
     return (
-        StructuredAgent(model, NORMALIZER_PROMPT, NormalizedDraft),
-        StructuredAgent(model, CLASSIFIER_PROMPT, TechnicalClassification),
-        StructuredAgent(model, IMPACT_PROMPT, ImpactRecommendation),
+        StructuredAgent(
+            model_factory(NORMALIZER_PARAMETERS), NORMALIZER_PROMPT, NormalizedDraft
+        ),
+        StructuredAgent(
+            model_factory(CLASSIFIER_PARAMETERS), CLASSIFIER_PROMPT, TechnicalClassification
+        ),
+        StructuredAgent(
+            model_factory(IMPACT_PARAMETERS), IMPACT_PROMPT, ImpactRecommendation
+        ),
     )
 
 

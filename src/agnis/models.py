@@ -38,6 +38,7 @@ class Observation(BaseModel):
     fields: list[str] = Field(default_factory=list)
     observed_values: str | None = None
     confirmed: bool = False
+    error: str | None = None
 
 
 class PocResult(BaseModel):
@@ -50,6 +51,8 @@ class PocResult(BaseModel):
 
 class TechnicalClassification(BaseModel):
     cvss_vector: str
+    cvss_score: float | None = None
+    severity: Literal["None", "Low", "Medium", "High", "Critical"] | None = None
     owasp_category: str
     technical_cause: str
     cwe_id: str | None = None
