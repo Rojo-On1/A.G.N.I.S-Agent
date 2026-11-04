@@ -2,18 +2,6 @@
 
 MVP de una cadena de agentes en Python para convertir un borrador de auditoría web y una plantilla institucional en un informe PDF.
 
-## Estado del MVP
-
-El pipeline ya separa:
-
-1. **Normalización:** transforma el Markdown en un modelo Pydantic.
-2. **POC:** usa un adaptador explícito; el adaptador incluido no ejecuta peticiones y deja los pasos sin confirmar.
-3. **Clasificación:** propone vector CVSS 4.0, OWASP y causa técnica.
-4. **Impacto:** recibe únicamente pasos confirmados.
-5. **Renderizado:** el último componente rellena la plantilla DOCX o PDF y produce un PDF.
-
-Las decisiones deterministas —confirmación de pasos, puntuación CVSS, severidad y validación CWE— ya se ejecutan en código. La ejecución web real sigue siendo un adaptador externo.
-
 ## Instalación
 
 ```bash
@@ -28,9 +16,6 @@ Edita `.env` y añade tu clave:
 ```dotenv
 OPENAI_API_KEY=tu_clave_de_openai
 ```
-
-La aplicación carga automáticamente `.env` mediante `python-dotenv`. El archivo
-`.env` está excluido de Git y nunca debe subirse al repositorio.
 
 ## Uso
 
@@ -185,10 +170,6 @@ según el objetivo de cada agente:
 | Clasificador | 0.0 | 0.1 | 1200 | Tarea técnica acotada; se reduce la variación y la creatividad. |
 | Impacto | 0.2 | 0.3 | 1800 | Tarea de redacción controlada; permite claridad sin alejarse de la evidencia. |
 
-`temperature` regula la variabilidad de la generación, `top_p` limita la distribución
-acumulada de tokens candidatos y `max_tokens` limita la longitud máxima de respuesta.
-Los valores bajos son apropiados porque el workflow transforma información de
-auditoría: la precisión y la consistencia son más importantes que la creatividad.
 
 ### 4. Arquitectura del workflow
 
@@ -216,28 +197,23 @@ LangChain con validaciones deterministas en Python. La salida es un PDF basado e
 plantilla institucional. La supervisión ocurre durante la confirmación de resultados
 y antes de la publicación.
 
-El POC incluido en este MVP funciona como límite de integración. El adaptador HTTP
-ejecuta únicamente peticiones declaradas y autorizadas; navegador o Burp pueden
-producir el mismo JSON de observaciones confirmadas.
-
 ### 5. Decisión final y justificación técnica
-
 Se eligió Python con LangChain porque permite construir agentes con prompts
 especializados, salida estructurada y sustitución del proveedor LLM. Pydantic valida
 los contratos entre etapas; Python ejecuta las reglas que no deben quedar a criterio
 del modelo; PyMuPDF y `python-docx` permiten trabajar con plantillas PDF y DOCX.
 
-La arquitectura desacoplada mejora la eficiencia porque automatiza la transcripción,
-clasificación preliminar y maquetación repetitiva. Mejora la seguridad porque limita
-el contexto de cada agente, evita que el modelo calcule decisiones críticas, valida el
-CWE contra el catálogo oficial y exige evidencia confirmada para redactar impacto.
-Los fallos de validación deben detener la generación en lugar de producir un informe
-con apariencia de completitud.
+La arquitectura desacoplada mejora la eficiencia porque:
+- Automatiza la transcripción, clasificación preliminar y maquetación repetitiva. 
+- Mejora la seguridad porque limita el contexto de cada agente.
+- Evita que el modelo calcule decisiones críticas 
+- Valida el CWE contra el catálogo oficial 
+- Exige evidencia confirmada para redactar impacto.
+- Los fallos de validación deben detener la generación en lugar de producir un informe con apariencia de completitud.
 
 ### 6. Ética, privacidad y normativa
 
 #### Riesgos identificados
-
 - **Privacidad:** los borradores pueden contener nombres, correos, direcciones IP,
   tokens, cookies o datos de usuarios.
 - **Sesgos y errores:** el modelo puede proponer una clasificación incorrecta o
@@ -250,7 +226,6 @@ con apariencia de completitud.
   generar riesgos contractuales, de residencia y retención de datos.
 
 #### Medidas de gobernanza
-
 1. Anonimizar o redactar secretos, datos personales y credenciales antes del envío.
 2. Mantener `.env` fuera del repositorio y gestionar las claves como secretos.
 3. Conservar el borrador original, entradas, salidas, versiones y decisiones para
@@ -263,10 +238,6 @@ con apariencia de completitud.
 9. Definir retención, acceso y eliminación de evidencias según la política institucional.
 
 #### Marcos legales y regulatorios
-
-El proyecto debe adaptarse a la jurisdicción de la institución y contar con revisión
-legal. Como referencias de gobernanza se consideran:
-
 - **GDPR/RGPD:** minimización, limitación de finalidad, base jurídica, seguridad,
   control de acceso, retención y derechos de los titulares cuando se procesen datos
   personales.
@@ -276,19 +247,3 @@ legal. Como referencias de gobernanza se consideran:
   identificando las obligaciones locales aplicables a ciberseguridad, datos y uso de
   sistemas automatizados.
 
-Estas referencias no sustituyen asesoría jurídica. El responsable del tratamiento y
-la institución deben determinar qué normativa aplica al caso concreto.
-
-### 7. Estado de cumplimiento
-
-| Requisito | Estado |
-|---|---|
-| Escenario y problema definidos | Implementado |
-| Prompts con restricciones de precisión y seguridad | Implementado |
-| Temperature, Top p y Max tokens definidos y justificados | Implementado |
-| Workflow con LangChain y agentes especializados | Implementado |
-| Diagrama entrada → procesamiento → salida → supervisión | Implementado |
-| Decisiones críticas ejecutadas en código | Implementado parcialmente; falta completar el adaptador POC real |
-| Salida basada en plantilla DOCX/PDF y PDF final | Implementado |
-| Gobernanza ética y referencias normativas | Definido |
-| POC real de navegador o Burp | Pendiente |
