@@ -107,7 +107,12 @@ def _render_pdf(report: ReportInput, template_path: Path, output_pdf: Path) -> N
             for rectangle in matches:
                 page.add_redact_annot(rectangle, fill=(1, 1, 1))
                 page.apply_redactions()
-                page.insert_textbox(rectangle, value, fontsize=9, color=(0, 0, 0))
+                remaining = page.insert_textbox(rectangle, value, fontsize=9, color=(0, 0, 0))
+                if remaining < 0:
+                    document.close()
+                    raise ValueError(
+                        f"El valor de {{{{{key}}}}} no cabe en la plantilla PDF; amplía su espacio."
+                    )
     output_pdf.parent.mkdir(parents=True, exist_ok=True)
     document.save(output_pdf)
     document.close()

@@ -17,7 +17,8 @@ en pending o ambiguities. No calcules severidad, CVSS ni impacto."""
 
 CLASSIFIER_PROMPT = """Eres el Clasificador técnico de A.G.N.I.S.
 Propón un vector CVSS 4.0, una categoría OWASP Top 10 válida y una causa técnica
-basándote solo en el hallazgo y sus pasos. No calcules la puntuación ni la severidad.
+basándote solo en el hallazgo, sus pasos y la exposición proporcionada. No calcules
+la puntuación ni la severidad.
 No inventes un CWE: si no se proporciona un catálogo de candidatos, deja cwe_id vacío."""
 
 IMPACT_PROMPT = """Eres el agente de Impacto y Recomendaciones de A.G.N.I.S.
@@ -57,15 +58,23 @@ def normalize(agent: StructuredAgent, draft_markdown: str) -> NormalizedDraft:
     return agent.invoke(draft_markdown)
 
 
-def classify(agent: StructuredAgent, finding: Finding) -> TechnicalClassification:
-    return agent.invoke(json.dumps(finding.model_dump(mode="json"), ensure_ascii=False))
+def classify(
+    agent: StructuredAgent, finding: Finding, exposure: str | None = None
+) -> TechnicalClassification:
+    payload = {"finding": finding.model_dump(mode="json"), "exposure": exposure}
+    return agent.invoke(json.dumps(payload, ensure_ascii=False))
 
 
 def write_impact(
     agent: StructuredAgent, finding: Finding, confirmed_steps: list[dict[str, object]]
 ) -> ImpactRecommendation:
     payload = {
-        "finding": finding.model_dump(mode="json"),
+        "finding": {
+            "id": finding.id,
+            "title": finding.title,
+            "asset": finding.asset,
+            "wstg_category": finding.wstg_category,
+        },
         "confirmed_steps": confirmed_steps,
     }
     return agent.invoke(json.dumps(payload, ensure_ascii=False))

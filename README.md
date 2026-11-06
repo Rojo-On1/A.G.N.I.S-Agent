@@ -24,6 +24,12 @@ agnis borrador.md plantilla.docx --output informe.pdf \
   --cwe-catalog data/cwec_v5.0.xml
 ```
 
+La CLI muestra la normalización para revisión del auditor antes de procesar los
+hallazgos. Tras generar y validar un PDF candidato, solicita una segunda aprobación
+antes de moverlo a la ruta indicada con `--output`. Un rechazo deja intacta esa ruta.
+Los consumidores de `run_pipeline` deben proporcionar las funciones
+`review_normalization` y `review_final`.
+
 También se aceptan plantillas PDF:
 
 ```bash
@@ -113,10 +119,14 @@ cabeceras sensibles y marca un paso como confirmado solo si coincide con
 `expected_status`. Para navegador o Burp se mantiene el contrato de observaciones
 JSON, de modo que pueden añadirse adaptadores sin cambiar el pipeline.
 
-Con `--artifacts-dir` se conserva `resolved-report.json` para trazabilidad. Antes de
-terminar, el pipeline valida que exista al menos un hallazgo, que cada clasificación
-tenga puntuación CVSS, que no queden marcadores de plantilla y que el PDF se haya
-generado correctamente.
+Con `--artifacts-dir` se conserva `resolved-report.json` tras la aprobación final.
+Antes de terminar, el pipeline valida que exista al menos un hallazgo, que cada
+clasificación tenga puntuación CVSS, que no queden marcadores de plantilla y que el
+PDF se haya generado correctamente. Si un valor no cabe en un marcador PDF, la
+generación se detiene con un error para que se amplíe el espacio de la plantilla.
+Una observación marcada como confirmada debe tener resultado esperado; cuando este
+indica un estado HTTP, el estado observado debe coincidir. Los resultados esperados
+en lenguaje libre siguen requiriendo comprobación del auditor.
 
 ## Diseño y gobernanza del workflow
 

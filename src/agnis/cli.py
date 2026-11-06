@@ -1,9 +1,23 @@
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
+from .models import NormalizedDraft, ReportInput
 from .pipeline import run_pipeline
+
+
+def _review_normalization(draft: NormalizedDraft) -> bool:
+    print("\nNormalización propuesta:")
+    print(json.dumps(draft.model_dump(mode="json"), ensure_ascii=False, indent=2))
+    return input("¿Apruebas esta normalización? [s/N] ").strip().lower() == "s"
+
+
+def _review_final(report: ReportInput, candidate_pdf: str) -> bool:
+    print(f"\nPDF candidato para revisión: {candidate_pdf}")
+    print(f"Hallazgos: {len(report.findings)}")
+    return input("Tras revisar el PDF, ¿apruebas su publicación? [s/N] ").strip().lower() == "s"
 
 
 def main() -> None:
@@ -56,5 +70,7 @@ def main() -> None:
         str(args.poc_http_spec) if args.poc_http_spec else None,
         str(args.artifacts_dir) if args.artifacts_dir else None,
         args.allow_network,
+        review_normalization=_review_normalization,
+        review_final=_review_final,
     )
     print(result)

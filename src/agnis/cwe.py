@@ -24,7 +24,7 @@ def validate_cwe(cwe_id: str | None, catalog_path: str | Path | None) -> str | N
     if not CWE_ID.fullmatch(cwe_id):
         raise ValueError(f"Identificador CWE inválido: {cwe_id}")
     if catalog_path is None:
-        return cwe_id
+        raise ValueError("Se requiere un catálogo CWE local para validar el identificador")
     if cwe_id not in catalog_ids(catalog_path):
         raise ValueError(f"El CWE no existe en el catálogo: {cwe_id}")
     return cwe_id

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Step(BaseModel):
@@ -56,6 +56,13 @@ class TechnicalClassification(BaseModel):
     owasp_category: str
     technical_cause: str
     cwe_id: str | None = None
+
+    @field_validator("owasp_category")
+    @classmethod
+    def valid_owasp_category(cls, value: str) -> str:
+        if value not in {f"A{number:02d}" for number in range(1, 11)}:
+            raise ValueError("La categoría OWASP debe estar entre A01 y A10")
+        return value
 
 
 class ImpactRecommendation(BaseModel):
